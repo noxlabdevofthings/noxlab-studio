@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to NoxLab</title>
+    <meta name="description" content="NoxLab Studio - makers of OmniLedger POS, an offline-first retail management system built with C# WinForms and SQLite.">
+    <meta name="theme-color" content="#070514">
+    <meta property="og:title" content="NoxLab Studio - OmniLedger POS">
+    <meta property="og:description" content="Offline-first retail management engineered with C# WinForms, local SQLite and cloud sync.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%2306b6d4'/%3E%3C/svg%3E">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        studio: {
+                            950: '#070514',
+                            900: '#110c26',
+                            800: '#1c143d',
+                            700: '#2a1f5c',
+                            600: '#3c2e82',
+                        },
+                        vivid: {
+                            cyan: '#06b6d4',
+                            purple: '#a855f7',
+                            pink: '#ec4899',
+                            violet: '#8b5cf6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"
+            onerror="var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2.58.0/dist/umd/supabase.js';document.head.appendChild(s);"></script>
+    <style>
+        section, div[id] {
+            scroll-margin-top: 80px;
+        }
+    </style>
+</head>
+<body class="bg-studio-950 text-purple-100 font-sans antialiased min-h-screen selection:bg-vivid-pink selection:text-white relative overflow-x-hidden w-full">
+
+    <!-- Ambient Glow Orbs -->
+    <div class="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-[90vw] max-w-[600px] h-[300px] bg-vivid-violet/15 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <!-- Navigation Header -->
+    <header class="border-b border-studio-700/60 bg-studio-900/90 backdrop-blur-md sticky top-0 z-40 w-full">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <!-- Mobile Hamburger Menu Toggle -->
+                <button onclick="toggleMobileMenu()" class="md:hidden text-purple-300 hover:text-white focus:outline-none p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <div class="flex items-center space-x-2.5 cursor-pointer">
+                    <div class="w-2.5 h-2.5 bg-gradient-to-r from-vivid-cyan to-vivid-pink rounded-full shadow-[0_0_12px_rgba(6,182,212,0.8)]"></div>
+                    <span class="font-black tracking-wider uppercase text-xs bg-gradient-to-r from-white via-purple-200 to-vivid-cyan bg-clip-text text-transparent">NoxLab Studio</span>
+                </div>
+            </div>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center space-x-6 text-xs font-medium text-purple-300">
+                <a href="#features" class="hover:text-white transition-colors">Architecture</a>
+                <a href="#download" class="hover:text-white transition-colors">Downloads</a>
+                <a href="#community" class="hover:text-white transition-colors">Roadmap</a>
+            </nav>
+
+            <div id="auth-container" class="flex items-center space-x-3">
+                <button onclick="openAuthModal()" class="text-xs bg-gradient-to-r from-vivid-violet to-vivid-purple hover:opacity-90 active:scale-95 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-white shadow-md transition-all">Sign In</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Slide-out Navigation Drawer -->
+    <div id="mobile-drawer" class="fixed inset-y-0 left-0 w-72 bg-studio-900 border-r border-studio-700 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col p-6 space-y-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-studio-700 pb-4">
+            <span class="font-black tracking-wider uppercase text-sm text-white">NoxLab Menu</span>
+            <button onclick="toggleMobileMenu()" class="text-purple-400 hover:text-white text-lg font-bold p-1">✕</button>
+        </div>
+        <nav class="flex flex-col space-y-5 text-base font-semibold text-purple-200">
+            <a href="#features" onclick="toggleMobileMenu()" class="hover:text-vivid-cyan transition-colors py-1">⚡ Architecture</a>
+            <a href="#download" onclick="toggleMobileMenu()" class="hover:text-vivid-cyan transition-colors py-1">📥 Downloads</a>
+            <a href="#community" onclick="toggleMobileMenu()" class="hover:text-vivid-cyan transition-colors py-1">🗺️ Community Roadmap</a>
+        </nav>
+        <div id="mobile-auth-status" class="pt-6 border-t border-studio-700 mt-auto">
+            <!-- Dynamically populated session management for mobile -->
+        </div>
+    </div>
+    <!-- Drawer Overlay -->
+    <div id="drawer-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+    <!-- Hero Section -->
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-20 relative z-10 space-y-12 sm:space-y-24 w-full overflow-hidden">
+        <div class="text-center max-w-3xl mx-auto space-y-5 sm:space-y-6">
+            <span class="inline-flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest text-vivid-cyan bg-studio-900 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border border-studio-700 shadow-inner">
+                <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-vivid-cyan animate-ping"></span>
+                Welcome to NoxLab
+            </span>
+            
+            <h1 class="text-3xl sm:text-6xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-white via-purple-100 to-vivid-cyan bg-clip-text text-transparent leading-tight sm:leading-none py-1">
+                OmniLedger POS
+            </h1>
+            
+            <p class="text-purple-300/90 text-xs sm:text-base leading-relaxed font-light px-2 sm:px-0">
+                High-performance offline-first retail management engineered with C# WinForms, local SQLite encryption, and real-time cloud synchronization. Designed for speed, precision, and modern store workflows.
+            </p>
+            
+            <!-- Download & Action Buttons -->
+            <div id="download" class="flex flex-col sm:flex-row justify-center items-center gap-3 pt-2 sm:pt-4 w-full">
+                <a href="OmniLedger POS.exe" download class="w-full sm:w-auto inline-flex justify-center items-center gap-2 bg-gradient-to-r from-vivid-cyan via-vivid-violet to-vivid-pink text-white font-bold text-xs px-6 py-3.5 rounded-xl hover:opacity-95 active:scale-95 transition-all shadow-[0_0_20px_rgba(6,182,212,0.25)]">
+                    <span>Download Windows .EXE</span>
+                    <span>↓</span>
+                </a>
+                <a href="#community" class="w-full sm:w-auto inline-flex justify-center items-center bg-studio-800/80 text-purple-200 border border-studio-600 font-semibold text-xs px-6 py-3.5 rounded-xl hover:bg-studio-700 active:scale-95 transition-all">
+                    View Community Roadmap
+                </a>
+            </div>
+        </div>
+
+        <!-- Feature Grid Cards -->
+        <section id="features" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full">
+            <div class="bg-studio-900/70 border border-studio-700/80 p-5 sm:p-6 rounded-2xl backdrop-blur space-y-2.5 hover:border-vivid-violet transition-all">
+                <div class="w-9 h-9 rounded-xl bg-studio-800 border border-studio-600 flex items-center justify-center text-vivid-cyan font-bold text-sm">⚡</div>
+                <h3 class="font-bold text-white text-xs sm:text-sm">Offline-First Engine</h3>
+                <p class="text-xs text-purple-300/70 font-light leading-relaxed">Built on local SQLite architecture ensuring zero latency and 100% operational uptime during internet dropouts.</p>
+            </div>
+            <div class="bg-studio-900/70 border border-studio-700/80 p-5 sm:p-6 rounded-2xl backdrop-blur space-y-2.5 hover:border-vivid-violet transition-all">
+                <div class="w-9 h-9 rounded-xl bg-studio-800 border border-studio-600 flex items-center justify-center text-vivid-purple font-bold text-sm">🎨</div>
+                <h3 class="font-bold text-white text-xs sm:text-sm">Vibrant UI Components</h3>
+                <p class="text-xs text-purple-300/70 font-light leading-relaxed">Custom `RoundedButton` layouts and responsive form design tailored to eliminate visual fatigue during long shifts.</p>
+            </div>
+            <div class="bg-studio-900/70 border border-studio-700/80 p-5 sm:p-6 rounded-2xl backdrop-blur space-y-2.5 hover:border-vivid-violet transition-all sm:col-span-2 md:col-span-1">
+                <div class="w-9 h-9 rounded-xl bg-studio-800 border border-studio-600 flex items-center justify-center text-vivid-pink font-bold text-sm">🔒</div>
+                <h3 class="font-bold text-white text-xs sm:text-sm">Cloud Sync & RLS</h3>
+                <p class="text-xs text-purple-300/70 font-light leading-relaxed">Secured via Supabase Row Level Security, connecting user suggestions and changelogs directly to the cloud.</p>
+            </div>
+        </section>
+
+        <!-- Changelog & Community Roadmap Grid -->
+        <div id="community" class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 w-full">
+            
+            <!-- Project Updates Column -->
+            <div class="bg-studio-900/90 border border-studio-700 p-5 sm:p-6 rounded-2xl space-y-5 shadow-2xl backdrop-blur w-full">
+                <div class="flex items-center justify-between border-b border-studio-700 pb-3.5">
+                    <h2 class="text-xs font-bold tracking-widest uppercase text-vivid-cyan">Project Changelog</h2>
+                    <span class="text-[10px] text-purple-400 bg-studio-800 px-2.5 py-0.5 rounded-full border border-studio-600">Live Feed</span>
+                </div>
+                <div id="updates-list" class="space-y-3">
+                    <p class="text-xs text-purple-400/60">Synchronizing updates from Supabase...</p>
+                </div>
+            </div>
+
+            <!-- Community Roadmap Column -->
+            <div class="bg-studio-900/90 border border-studio-700 p-5 sm:p-6 rounded-2xl space-y-5 flex flex-col justify-between shadow-2xl backdrop-blur w-full">
+                <div>
+                    <div class="flex justify-between items-center border-b border-studio-700 pb-3.5">
+                        <h2 class="text-xs font-bold tracking-widest uppercase text-vivid-pink">Community Roadmap</h2>
+                        <span id="user-status" class="text-[10px] sm:text-[11px] text-purple-200 font-medium bg-studio-800 px-2.5 py-0.5 rounded-full border border-studio-600"></span>
+                    </div>
+                    <div id="suggestions-list" class="space-y-3 mt-4 max-h-[300px] overflow-y-auto pr-1">
+                        <p class="text-xs text-purple-400/60">Loading roadmap items...</p>
+                    </div>
+                </div>
+
+                <!-- Suggestion Input Form -->
+                <div id="suggestion-form-container" class="pt-4 border-t border-studio-700 hidden">
+                    <form id="new-suggestion-form" onsubmit="submitSuggestion(event)" class="space-y-2.5">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-medium text-purple-300">Feature Request</label>
+                            <input type="text" id="suggestion-title" placeholder="e.g. Add dark mode export..." required maxlength="140" class="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-xs focus:outline-none focus:border-vivid-violet transition-colors text-purple-100 placeholder-purple-400/40">
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-vivid-violet to-vivid-purple text-white text-xs font-semibold py-2.5 rounded-xl hover:opacity-95 active:scale-[0.99] transition-all shadow-md">Submit Request</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-studio-950/80 backdrop-blur-md hidden flex items-center justify-center z-50 p-4 w-full">
+        <div class="bg-studio-900 border border-studio-700 p-5 sm:p-7 rounded-2xl w-full max-w-sm sm:max-w-md space-y-4 relative shadow-2xl my-auto">
+            <div>
+                <h3 class="text-sm sm:text-base font-bold text-white tracking-wide">NoxLab Studio Portal</h3>
+                <p class="text-xs text-purple-300/70 mt-1">Sign in or register to submit ideas and vote on features.</p>
+            </div>
+            <div id="auth-error-banner" role="status" aria-live="polite" class="hidden"></div>
+            <form id="auth-form" onsubmit="handleSignIn(event)" class="space-y-4">
+                <div class="space-y-3.5">
+                    <div class="space-y-1">
+                        <label for="auth-email" class="block text-xs font-medium text-purple-300">Email Address</label>
+                        <input type="email" id="auth-email" name="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="developer@gmail.com" class="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-xs focus:outline-none focus:border-vivid-cyan text-purple-100 placeholder-purple-400/40">
+                    </div>
+                    <div class="space-y-1">
+                        <label for="auth-password" class="block text-xs font-medium text-purple-300">Password</label>
+                        <input type="password" id="auth-password" name="password" autocomplete="current-password" placeholder="••••••••••••" class="w-full bg-studio-950 border border-studio-700 rounded-xl px-3.5 py-2.5 text-base sm:text-xs focus:outline-none focus:border-vivid-cyan text-purple-100 placeholder-purple-400/40">
+                    </div>
+                </div>
+                <div class="flex space-x-2.5 pt-2">
+                    <button type="submit" id="btn-signin" class="flex-1 bg-gradient-to-r from-vivid-violet to-vivid-purple text-white text-xs font-semibold py-2.5 rounded-xl hover:opacity-95 active:scale-95 transition-all shadow-md">Sign In</button>
+                    <button type="button" id="btn-signup" onclick="handleSignUp()" class="flex-1 bg-studio-800 border border-studio-600 text-xs py-2.5 rounded-xl hover:bg-studio-700 active:scale-95 text-purple-200 transition-all font-medium">Register</button>
+                </div>
+            </form>
+            <p class="text-[11px] text-purple-400/70 text-center">Trouble signing in? <a href="diagnose.html" target="_blank" rel="noopener" class="underline hover:text-vivid-cyan">Run a connection check</a></p>
+            <button type="button" aria-label="Close" onclick="closeAuthModal()" class="absolute top-4 right-4 text-purple-400/60 hover:text-white text-sm transition-colors p-1">✕</button>
+        </div>
+    </div>
+
+    <!-- Client Script -->
+    <script>
+        // ---------------------------------------------------------------
+        // Supabase configuration
+        // The publishable key is designed to be public; RLS protects data.
+        // ---------------------------------------------------------------
+        const SUPABASE_PROJECT_URL = 'https://mwiudmpumfpmezffwags.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_2DTNP_MKYIBCVJlAc49n0w_mFDlHgpP';
+
+        // Routing: requests go through a same-origin proxy (/supabase/* ->
+        // Supabase, see netlify.toml / _redirects) when the page is served over
+        // http(s). If that route fails (proxy not deployed, Netlify can't reach
+        // Supabase, network error, timeout) the request is retried directly
+        // against *.supabase.co, and vice versa. The route that last worked is
+        // remembered for the session. Add ?direct or ?proxy to force a route.
+        const ROUTE_KEY = 'noxlab_route';
+        const REQUEST_TIMEOUT_MS = 12000;
+        const canProxy = location.protocol === 'https:' || location.protocol === 'http:';
+        const urlParams = new URLSearchParams(location.search);
+
+        function getRouteOrder() {
+            if (!canProxy || urlParams.has('direct')) return ['direct'];
+            if (urlParams.has('proxy')) return ['proxy'];
+            let last = null;
+            try { last = sessionStorage.getItem(ROUTE_KEY); } catch (_) {}
+            return last === 'direct' ? ['direct', 'proxy'] : ['proxy', 'direct'];
+        }
+
+        function rememberRoute(route) {
+            try { sessionStorage.setItem(ROUTE_KEY, route); } catch (_) {}
+            window.__noxRoute = route;
+        }
+
+        function fetchWithTimeout(url, init, ms) {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), ms);
+            if (init && init.signal) {
+                if (init.signal.aborted) ctrl.abort();
+                else init.signal.addEventListener('abort', () => ctrl.abort(), { once: true });
+            }
+            return fetch(url, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+        }
+
+        // A proxy answer that is really "the redirect isn't active" or "Netlify
+        // couldn't reach Supabase": an HTML page, or a 502/503/504.
+        function proxyLooksBroken(res) {
+            const ct = (res.headers.get('content-type') || '').toLowerCase();
+            return ct.includes('text/html') || res.status === 502 || res.status === 503 || res.status === 504;
+        }
+
+        async function routedFetch(input, init) {
+            const url = typeof input === 'string' ? input : input.url;
+            if (!url.startsWith(SUPABASE_PROJECT_URL)) return fetch(input, init);
+
+            const path = url.slice(SUPABASE_PROJECT_URL.length);
+            const order = getRouteOrder();
+            let lastError = null;
+            let lastResponse = null;
+
+            for (const route of order) {
+                const target = route === 'proxy' ? `${location.origin}/supabase${path}` : url;
+                try {
+                    const res = await fetchWithTimeout(target, init, REQUEST_TIMEOUT_MS);
+                    if (route === 'proxy' && order.length > 1 && proxyLooksBroken(res)) {
+                        lastResponse = res;
+                        console.warn(`[NoxLab] proxy route unusable (HTTP ${res.status}); trying direct`);
+                        continue;
+                    }
+                    rememberRoute(route);
+                    return res;
+                } catch (err) {
+                    lastError = err;
+                    console.warn(`[NoxLab] ${route} route failed:`, err && err.message);
+                }
+            }
+            if (lastResponse) return lastResponse;
+            throw lastError || new TypeError('Failed to fetch');
+        }
+
+        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+
+        let supabaseClient = null;
+        let currentUser = null;
+
+        function createSupabaseClient() {
+            if (!window.supabase) {
+                console.error('supabase-js failed to load from both CDNs.');
+                return;
+            }
+            supabaseClient = window.supabase.createClient(SUPABASE_PROJECT_URL, SUPABASE_ANON_KEY, {
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                },
+                global: { fetch: routedFetch }
+            });
+        }
+
+        // ---------------------------------------------------------------
+        // Helpers
+        // ---------------------------------------------------------------
+        function isNetworkError(err) {
+            const msg = (err && err.message) || '';
+            return (err && err.name === 'AuthRetryableFetchError') ||
+                /failed to fetch|load failed|networkerror|network request failed/i.test(msg);
+        }
+
+        function friendlyAuthError(err) {
+            if (isNetworkError(err)) {
+                return "Can't reach the NoxLab server right now. Check your connection, or try Wi-Fi instead of mobile data, then try again.";
+            }
+            return (err && err.message) || 'Something went wrong. Please try again.';
+        }
+
+        function renderListError(container, label, retryFn) {
+            container.innerHTML = `
+                <div class="flex items-center justify-between gap-3 text-xs text-rose-300/90 bg-rose-950/40 border border-rose-800/60 rounded-xl p-3">
+                    <span>Couldn't load ${esc(label)}.</span>
+                    <button onclick="${retryFn}()" class="shrink-0 text-purple-100 bg-studio-800 border border-studio-600 hover:bg-studio-700 active:scale-95 px-2.5 py-1 rounded-lg transition-all">Retry</button>
+                </div>`;
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-drawer').classList.toggle('-translate-x-full');
+            document.getElementById('drawer-overlay').classList.toggle('hidden');
+        }
+
+        // ---------------------------------------------------------------
+        // Init
+        // ---------------------------------------------------------------
+        function init() {
+            if (!supabaseClient) {
+                renderListError(document.getElementById('updates-list'), 'updates', 'location.reload');
+                renderListError(document.getElementById('suggestions-list'), 'the roadmap', 'location.reload');
+                return;
+            }
+
+            // Register first: INITIAL_SESSION fires immediately with the stored session.
+            // Never call other Supabase methods synchronously inside this callback.
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                currentUser = session?.user || null;
+                setTimeout(() => {
+                    updateAuthUI();
+                    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                        loadSuggestions();
+                    }
+                }, 0);
+            });
+
+            loadUpdates();
+        }
+
+        function updateAuthUI() {
+            const authContainer = document.getElementById('auth-container');
+            const mobileAuthStatus = document.getElementById('mobile-auth-status');
+            const userStatus = document.getElementById('user-status');
+            const formContainer = document.getElementById('suggestion-form-container');
+
+            if (currentUser) {
+                const email = esc(currentUser.email);
+                authContainer.innerHTML = `
+                    <span class="text-xs text-purple-300 hidden md:inline">${email}</span>
+                    <button onclick="handleSignOut()" class="text-xs bg-studio-800 hover:bg-studio-700 active:scale-95 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg border border-studio-600 text-purple-300 transition-all">Sign Out</button>
+                `;
+                mobileAuthStatus.innerHTML = `
+                    <div class="space-y-2">
+                        <p class="text-xs text-purple-300 truncate">${email}</p>
+                        <button onclick="handleSignOut()" class="w-full text-xs bg-studio-800 hover:bg-studio-700 active:scale-95 py-2.5 rounded-xl border border-studio-600 text-purple-200 font-medium transition-all">Sign Out</button>
+                    </div>
+                `;
+                userStatus.innerText = 'Unlocked';
+                formContainer.classList.remove('hidden');
+            } else {
+                authContainer.innerHTML = `
+                    <button onclick="openAuthModal()" class="text-xs bg-gradient-to-r from-vivid-violet to-vivid-purple hover:opacity-90 active:scale-95 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold text-white shadow-md transition-all">Sign In</button>
+                `;
+                mobileAuthStatus.innerHTML = `
+                    <button onclick="openAuthModal(); toggleMobileMenu();" class="w-full text-xs bg-gradient-to-r from-vivid-violet to-vivid-purple py-2.5 rounded-xl font-semibold text-white shadow-md">Sign In / Register</button>
+                `;
+                userStatus.innerText = 'Sign in to vote';
+                formContainer.classList.add('hidden');
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Data loading (all user-supplied text is escaped before innerHTML)
+        // ---------------------------------------------------------------
+        async function loadUpdates() {
+            const container = document.getElementById('updates-list');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('project_updates')
+                    .select('title, description, version, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `<p class="text-xs text-purple-400/60 italic">No updates published yet.</p>`;
+                    return;
+                }
+
+                container.innerHTML = data.map(update => `
+                    <div class="bg-studio-950/70 border border-studio-700/80 p-3.5 rounded-xl space-y-1 hover:border-vivid-cyan transition-colors">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold text-white tracking-wide">${esc(update.title)}</h3>
+                            <span class="text-[9px] text-vivid-cyan bg-studio-900 px-2 py-0.5 rounded-full border border-studio-700 font-mono">${esc(update.version || 'v1.0')}</span>
+                        </div>
+                        <p class="text-xs text-purple-300/80 leading-relaxed font-light">${esc(update.description)}</p>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Failed loading updates:', err);
+                renderListError(container, 'updates', 'loadUpdates');
+            }
+        }
+
+        async function loadSuggestions() {
+            const container = document.getElementById('suggestions-list');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('suggestions')
+                    .select('id, title, upvotes')
+                    .order('upvotes', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `<p class="text-xs text-purple-400/60 italic">No community requests yet.</p>`;
+                    return;
+                }
+
+                container.innerHTML = data.map(item => `
+                    <div class="bg-studio-950/70 border border-studio-700/80 p-3 rounded-xl flex justify-between items-center hover:border-vivid-pink transition-colors">
+                        <span class="text-xs text-purple-200 font-light pr-2 break-words min-w-0">${esc(item.title)}</span>
+                        <button onclick="upvote(${Number(item.id)})" class="text-xs bg-studio-800 hover:bg-studio-700 active:scale-95 border border-studio-600 px-2.5 py-1 rounded-lg flex items-center space-x-1 transition-all text-purple-300 hover:text-white shrink-0 shadow-sm">
+                            <span class="text-vivid-pink text-[9px]">▲</span><span class="font-mono font-medium">${Number(item.upvotes) || 0}</span>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Failed loading suggestions:', err);
+                renderListError(container, 'the roadmap', 'loadSuggestions');
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Suggestions & voting
+        // The vote counter is maintained by a database trigger
+        // (see supabase-hardening.sql), so the client only inserts the vote.
+        // ---------------------------------------------------------------
+        async function submitSuggestion(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('suggestion-title');
+            const title = titleInput.value.trim();
+            if (!title || !currentUser) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('suggestions')
+                    .insert([{ title: title.slice(0, 140), user_id: currentUser.id }]);
+                if (error) throw error;
+                titleInput.value = '';
+                loadSuggestions();
+            } catch (err) {
+                alert(friendlyAuthError(err));
+            }
+        }
+
+        const votingInFlight = new Set();
+
+        async function upvote(suggestionId) {
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+            if (votingInFlight.has(suggestionId)) return;
+            votingInFlight.add(suggestionId);
+
+            try {
+                const { error } = await supabaseClient
+                    .from('suggestion_votes')
+                    .insert([{ suggestion_id: suggestionId, user_id: currentUser.id }]);
+
+                if (error) {
+                    if (error.code === '23505') {
+                        alert('You have already upvoted this suggestion.');
+                    } else {
+                        throw error;
+                    }
+                }
+                loadSuggestions();
+            } catch (err) {
+                alert(friendlyAuthError(err));
+            } finally {
+                votingInFlight.delete(suggestionId);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Auth modal
+        // ---------------------------------------------------------------
+        function showAuthMessage(kind, message) {
+            const banner = document.getElementById('auth-error-banner');
+            const tone = kind === 'success'
+                ? 'bg-emerald-950/60 border-emerald-700 text-emerald-300'
+                : 'bg-rose-950/60 border-rose-700 text-rose-300';
+            banner.className = `${tone} border text-[11px] p-2.5 rounded-xl`;
+            banner.innerText = message;
+        }
+
+        function hideAuthMessage() {
+            document.getElementById('auth-error-banner').className = 'hidden';
+        }
+
+        function setAuthBusy(busy) {
+            ['btn-signin', 'btn-signup'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.disabled = busy;
+                btn.classList.toggle('opacity-60', busy);
+            });
+        }
+
+        function openAuthModal() {
+            hideAuthMessage();
+            document.getElementById('auth-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('auth-email').focus(), 50);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function readCredentials() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            if (!email || !password) {
+                showAuthMessage('error', 'Please enter your email and password.');
+                return null;
+            }
+            return { email, password };
+        }
+
+        async function handleSignIn(e) {
+            if (e) e.preventDefault();
+            const creds = readCredentials();
+            if (!creds) return;
+
+            hideAuthMessage();
+            setAuthBusy(true);
+            try {
+                const { error } = await supabaseClient.auth.signInWithPassword(creds);
+                if (error) throw error;
+                document.getElementById('auth-password').value = '';
+                closeAuthModal();
+            } catch (err) {
+                console.error('Sign-in failed:', err);
+                showAuthMessage('error', friendlyAuthError(err));
+            } finally {
+                setAuthBusy(false);
+            }
+        }
+
+        async function handleSignUp() {
+            const creds = readCredentials();
+            if (!creds) return;
+            if (creds.password.length < 6) {
+                showAuthMessage('error', 'Password must be at least 6 characters.');
+                return;
+            }
+
+            hideAuthMessage();
+            setAuthBusy(true);
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    ...creds,
+                    options: { emailRedirectTo: location.origin }
+                });
+                if (error) throw error;
+
+                document.getElementById('auth-password').value = '';
+                if (data?.session) {
+                    closeAuthModal();
+                } else {
+                    showAuthMessage('success', 'Almost there! Check your email to confirm your account, then sign in.');
+                }
+            } catch (err) {
+                console.error('Sign-up failed:', err);
+                showAuthMessage('error', friendlyAuthError(err));
+            } finally {
+                setAuthBusy(false);
+            }
+        }
+
+        async function handleSignOut() {
+            try {
+                await supabaseClient.auth.signOut();
+            } catch (err) {
+                console.error('Sign-out failed:', err);
+            }
+            // onAuthStateChange updates the UI; this is a safety net.
+            currentUser = null;
+            updateAuthUI();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAuthModal();
+        });
+
+        // Wait for the window "load" event so the CDN fallback script (if it was
+        // needed) has finished loading before the client is created.
+        function boot() {
+            createSupabaseClient();
+            init();
+        }
+        if (document.readyState === 'complete') boot();
+        else window.addEventListener('load', boot);
+    </script>
+</body>
+</html>
